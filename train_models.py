@@ -24,9 +24,9 @@ from sklearn.metrics import(
 )
 
 dataset_name="muratkokludataset/dry-bean-dataset"
-target_column="class"
+target_column="Class"
 test_size=0.20
-random_state=42
+#random_state=42
 model_directory="model"
 test_file_name="test_data.csv"
 result_file="model_results.csv"
@@ -77,10 +77,10 @@ if target_column not in df.columns:
 
 
 df = df.dropna(how="any")
-df = df.drop_duplicates
+df = df.drop_duplicates()
 print(f"Shape after cleaning: {df.shape}")
 
-X=df.frop(columns=[target_column])
+X=df.drop(columns=[target_column])
 y=df[target_column]
 
 print("\n"+"="*70)
@@ -108,9 +108,9 @@ print(f"Training samples: {len(X_train)}")
 print(f"Testing samples : {len(X_test)}")
 
 models={
-    "Logestic Regression":Pipeline([
+    "Logistic Regression":Pipeline([
         (
-            "scalar",
+            "scaler",
             StandardScaler()
         ),
         (
@@ -126,7 +126,7 @@ models={
     ),
     "KNN": Pipeline([
         (
-            "scalar",
+            "scaler",
             StandardScaler()
         ),
         (
@@ -137,7 +137,7 @@ models={
         ),
     ]),
     "Gaussian Naive Bayes": GaussianNB(),
-    "Random Forst": RandomForestClassifier(
+    "Random Forest": RandomForestClassifier(
         n_estimators=200,
         random_state=42,
         n_jobs=-1
@@ -203,7 +203,7 @@ print("\n"+"="*70)
 print("TEST DATA CREATED")
 print("="*70)
 
-print(f"File: {TEST_DATA_FILE}")
+print(f"File: {test_file_name}")
 print(f"Rows: {len(test_data)}")
 
 results_df=pd.DataFrame(
