@@ -247,3 +247,181 @@ if uploaded_file is None:
     )
 
     st.stop()
+
+    try:
+        test_data=pd.read_csv(uploaded_file)
+    except Exception as error:
+        st.error(
+            f"Could not read the file. Error: {error}"
+        )
+        st.stop()
+
+if not validate_dataset(test_data):
+    st.stop()
+
+
+st.markdown(
+    '<div class="section-heading">Test Dataset Overview</div>',
+    unsafe_allow_html=True,
+)
+
+col1,col2,col3=st.columns(3)
+
+col1.metric(
+    "Test Samples",
+    len(test_data),
+)
+col2.metric(
+    "Input Features",
+    len(test_data.columns)-1,
+)
+col3.metric(
+    "Classes",
+    test_data[target_column].nunique(),
+)
+with st.expander("Uploaded Data Preview"):
+    st.dataframe(
+        test_data.head(10),
+        use_container_width=True
+    )
+
+X_test=test_data.drop(columns=[target_column])
+y_test=test_data[target_column]
+
+non_numeric=X_test.select_dtypes(
+    exclude='number'
+).columns.tolist()
+
+if non_numeric:
+    st.error(
+        "The following features are non numeric:".join(non_numeric)
+    )
+    st.stop()
+
+filename_selected=model_filenames[selected_model]
+selected_path=model_dir/filename_selected
+
+if not selected_path.exists():
+    st.error(
+        f"The selected model was not found:\n\n"
+        f"`{selected_path}`\n\n"
+        "Run train_models.py and retry..."
+    )
+    st.stop()
+
+model=model_load(selected_path)
+st.markdown(
+    '<div class="section-heading">Selected Classifier</div>',
+    unsafe_allow_html=True,
+)
+
+st.success(
+    f"Evaluating **{selected_model}**"
+)
+
+try:
+    predictions, metrics=model_evaluation(model,X_test,y_test)
+except Exception as e:
+    st.error(f'Prediction Failed due to Error: {error}')
+    st.stop()
+
+st.markdown(
+    '<div class="section-heading">Evaluation Metrics</div>',
+    unsafe_allow_html=True,
+)
+
+show_metrics(metrics)
+
+st.markdown(
+    '<div class="section-heading">Classifier Comparison</div>',
+    unsafe_allow_html=True,
+)
+
+comparison=model_comparison(test_data)
+if comparison.empty:
+    st.warning("No filed found")
+else:
+    metric_columns=[
+        "Accuracy",
+        "AUC",
+        "Precision",
+        "Recall",
+        "F1",
+        "MCC",
+    ]
+    comparison[metric_columns]=comparison[metric_columns].round(4)
+
+    st.dataframe(
+        comparison,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+st.markdown(
+    '<div class="section-heading">🔲 Confusion Matrix</div>',
+    unsafe_allow_html=True,
+)
+
+class_labels=sorted(y_test.unique())
+
+c_matrix=confusion_matrix(
+    y_test,
+    predictions,
+    labels=class_labels
+    )
+fig, ax=plt.subplots(
+    figsize=(9,7)
+)
+sns.heatmap(
+    c_matrix,
+    annot=True,
+    fmt="d",
+    cmap="YlGn",
+    linewidths=0.5,
+    xticklabels=class_labels,
+    yticklabels=class_labels,
+    ax=ax,
+)
+
+
+ax.set_title(f"Confusion Matrix — {selected_model}")
+ax.set_xlabel("Predicted Class")
+ax.set_ylabel("Actual Class")
+plt.tight_layout()
+st.pyplot(
+    fig,
+    use_container_width=True,
+)
+plt.close(fig)
+
+st.markdown(
+    '<div class="section-heading">Classification Report</div>',
+    unsafe_allow_html=True,
+)
+
+report = classification_report(
+    y_test,
+    predictions,
+    zero_division=0,
+)
+
+st.code(
+    report,
+    language="text",
+)
+
+st.markdown(
+    '<div class="section-heading">Prediction Summary</div>',
+    unsafe_allow_html=True,
+)
+correct_predications=int((predictions==y_test).sum())
+incorrect_predications=int((predictions!=y_test).sum())
+summary1,summary2=st.columns(2)
+summary1.metric("Correct Predictions",correct_predications)
+summary2.metric("In Correct Predictions",incorrect_predications)
+
+st.divider()
+st.caption(
+    "Dry Bean Classification Lab • "
+    "Evaluation performed on uploaded test data"
+)
