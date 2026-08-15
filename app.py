@@ -52,7 +52,7 @@ st.markdown(
             font-size: 1.05rem;
             margin-bottom: 0.2rem;
         }
-        .subtitle {
+        .section_heading {
             color: #000000;
             font-size: 1.5rem;
             font-weight: 650;
@@ -131,7 +131,7 @@ def model_evaluation(model,X,y):
     auc=None
     if probabilities is not None:
         try:
-            auc=roc_auc_score(y,predictions,average="weighted",zero_division=0,)
+            auc=roc_auc_score(y,probabilities,average="weighted",zero_division=0,)
         except ValueError:
             auc=None
     
@@ -143,7 +143,7 @@ def model_evaluation(model,X,y):
         "F1": f1,
         "MCC": mcc,
     }
-    return precision,metrics
+    return precision, metrics
 
 def show_metrics(metrics):
     columns=st.columns(6)
@@ -161,7 +161,7 @@ def show_metrics(metrics):
         if value is None:
             display_value="N/A"
         else:
-            display_value=f"{value:.f}"
+            display_value=f"{value:.4f}"
 
         column.metric(
             label=name,
@@ -181,7 +181,7 @@ def model_comparison(data):
         rows.append(
             {
                 "Model": model_name,
-                "Accracy": metrics["Accuracy"],
+                "Accuracy": metrics["Accuracy"],
                 "AUC": metrics["AUC"],
                 "Precision": metrics["Precision"],
                 "Recall": metrics["Recall"],
@@ -196,7 +196,7 @@ with st.sidebar:
     st.write(
         "Upload the dataset and select the classifier"
     )
-    uploaded_file=st.file_update(
+    uploaded_file=st.file_uploader(
         "Uploade the test dataset",
         type=["csv"],
     )
@@ -248,13 +248,13 @@ if uploaded_file is None:
 
     st.stop()
 
-    try:
-        test_data=pd.read_csv(uploaded_file)
-    except Exception as error:
-        st.error(
-            f"Could not read the file. Error: {error}"
-        )
-        st.stop()
+try:
+    test_data=pd.read_csv(uploaded_file)
+except Exception as error:
+    st.error(
+        f"Could not read the file. Error: {error}"
+    )
+    st.stop()
 
 if not validate_dataset(test_data):
     st.stop()
@@ -294,7 +294,7 @@ non_numeric=X_test.select_dtypes(
 
 if non_numeric:
     st.error(
-        "The following features are non numeric:".join(non_numeric)
+        "The following features are non numeric:"+",".join(non_numeric)
     )
     st.stop()
 
@@ -321,7 +321,7 @@ st.success(
 
 try:
     predictions, metrics=model_evaluation(model,X_test,y_test)
-except Exception as e:
+except Exception as error:
     st.error(f'Prediction Failed due to Error: {error}')
     st.stop()
 
@@ -418,7 +418,7 @@ correct_predications=int((predictions==y_test).sum())
 incorrect_predications=int((predictions!=y_test).sum())
 summary1,summary2=st.columns(2)
 summary1.metric("Correct Predictions",correct_predications)
-summary2.metric("In Correct Predictions",incorrect_predications)
+summary2.metric("InCorrect Predictions",incorrect_predications)
 
 st.divider()
 st.caption(
