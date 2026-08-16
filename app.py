@@ -131,7 +131,7 @@ def model_evaluation(model,X,y):
     auc=None
     if probabilities is not None:
         try:
-            auc=roc_auc_score(y,probabilities,average="weighted",zero_division=0,)
+            auc=roc_auc_score(y,probabilities,multi_class="ovr",average="weighted",)
         except ValueError:
             auc=None
     
@@ -143,7 +143,7 @@ def model_evaluation(model,X,y):
         "F1": f1,
         "MCC": mcc,
     }
-    return precision, metrics
+    return predictions, metrics
 
 def show_metrics(metrics):
     columns=st.columns(6)
@@ -247,7 +247,7 @@ if uploaded_file is None:
     )
 
     st.stop()
-
+test_data=None
 try:
     test_data=pd.read_csv(uploaded_file)
 except Exception as error:
